@@ -17,8 +17,8 @@ const globalErrorHandler = require("./controllers/errorController");
 const AppError = require("./utils/appError");
 const server = http.createServer(app);
 const socketServer = http.createServer();
-const port = process.env.PORT || 3000;
-const serverPort = process.env.Port || 3001;
+const port = process.env.PORT || 3002;
+const serverPort = process.env.Port || 3003;
 global.io = socket(socketServer, {
   cors: {
     origin: "*",
@@ -33,7 +33,7 @@ dotenv.config({ path: "./config.env" });
 app.use(express.static(path.join(__dirname, "static")));
 
 const dbUrl =
-  "mongodb+srv://stationaryApp:stationaryApp1@clusterstationary.hrgyz.mongodb.net/?retryWrites=true&w=majority&appName=ClusterStationary"
+  "mongodb+srv://stationaryApp:stationaryApp1@clusterstationary.hrgyz.mongodb.net/?retryWrites=true&w=majority&appName=ClusterStationary";
 
 const connectionParams = {
   useNewUrlParser: true,
@@ -67,11 +67,11 @@ app.get("/", (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log("listening on server*: 3000");
+  console.log("listening on server*: 3002");
 });
 
 socketServer.listen(serverPort, () => {
-  console.info(`Socket server started on 3001`);
+  console.info(`Socket server started on 3003`);
 });
 
 app.use(globalErrorHandler);
