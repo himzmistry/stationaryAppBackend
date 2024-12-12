@@ -88,23 +88,44 @@ exports.signUp = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  // 1) check email n pwd exist
-  if (!email || !password) {
-    return next(new AppError("Please provide email or password !!!", 400));
+    // 1) check email n pwd exist
+    if (!email || !password) {
+      return next(new AppError("Please provide email or password !!!", 400));
+    }
+
+    // 2) check if user exists and pwd is correct
+    const user = await User.findOne({ email }).select("+password");
+
+    if (user === null) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "fail",
+        message: "User not found. Please signup",
+      });
+    }
+
+    const correct = await user.correctPassword(password, user.password);
+
+    if (!correct) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "fail",
+        message: "Incorrect Password",
+      });
+    }
+
+    // 3) if everything oky, send token to client
+    createSendToken(user, 200, req, res);
+  } catch (err) {
+    res.status(401).json({
+      statusCode: 401,
+      status: "fail",
+      message: "Incorrect email or password!!!",
+    });
   }
-
-  // 2) check if user exists and pwd is correct
-  const user = await User.findOne({ email }).select("+password");
-  const correct = await user.correctPassword(password, user.password);
-
-  if (!user || !correct) {
-    return next(new AppError("Incorrect email and password!!!", 401));
-  }
-
-  // 3) if everything oky, send token to client
-  createSendToken(user, 200, req, res);
 };
 
 exports.protect = async (req, res, next) => {
