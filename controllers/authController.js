@@ -83,7 +83,11 @@ exports.signUp = async (req, res, next) => {
     //const token = signToken(newUser._id);
     createSendToken(newUser, 201, req, res);
   } catch (err) {
-    res.status(409).json({ statusCode: 409, status: "fail", message: "User already exists" });
+    res.status(409).json({
+      statusCode: 409,
+      status: "fail",
+      message: "User already exists",
+    });
   }
 };
 
@@ -129,48 +133,60 @@ exports.login = async (req, res, next) => {
 };
 
 exports.protect = async (req, res, next) => {
-  // 1) Getting token and check if exists
-  let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies.jwt) {
-    token = req.cookies.jwt;
-  }
-  // console.log(token);
+  try {
+    let token;
 
-  if (!token) {
-    return next(
-      new AppError("You are not logged in! Please login to get access !!!", 401)
-    );
-  }
-  // 2) Verificaton token
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  //console.log(decoded);
+    // 1) Check if the token is available in the Authorization header or cookies
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
 
-  // 3) Check if user still exist
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return next(
-      new AppError(
-        "The user belonging to this token does not longer exist.",
-        401
-      )
-    );
-  }
+    // If no token is found, return an error
+    if (!token) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "fail",
+        message: "You are not logged in! Please login to get access!",
+      });
+    }
 
-  // 4) Check if user change pwd after JWT(token) was issued
-  // if (currentUser.changedPasswordAfter(decoded.iat)) {
-  //   return next(
-  //     new AppError('User recently changed passord ! Please login again', 401)
-  //   );
-  // }
-  //Grant Access to PROTECTED ROUTE
-  req.user = currentUser;
-  res.locals.user = currentUser;
-  next();
+    // 2) Verify the token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+    // 3) Check if the user exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "fail",
+        message: "The user belonging to this token does not longer exist.",
+      });
+    }
+
+    // Grant access to the protected route
+    req.user = currentUser;
+    res.locals.user = currentUser;
+    next();
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "fail",
+        message: "Invalid token, please log in again.",
+      });
+    }
+
+    return res.status(500).json({
+      statusCode: 500,
+      status: "fail",
+      message: "Something went wrong during token verification.",
+    });
+  }
 };
 
 exports.logout = (req, res) => {

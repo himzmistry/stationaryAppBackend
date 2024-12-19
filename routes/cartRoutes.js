@@ -6,7 +6,7 @@ const router = express.Router();
 
 router
   .get("/getAllCartCategories", cartController.getAllCartCategories)
-  .post("/createCartItem", cartController.createCartCategory)
+  .post("/createCartItem/:categoryId", cartController.addItemToCart)
   .delete("/deletecartItem/:id", cartController.deleteCartCategory);
 
 module.exports = router;
