@@ -13,6 +13,7 @@ exports.getAllCartCategories = async (req, res, next) => {
 
 exports.createCartCategory = factory.createOne(Cart);
 exports.deleteCartCategory = factory.deleteOne(Cart);
+exports.updateCartCategory = factory.updateOne(Cart);
 
 exports.addItemToCart = async (req, res) => {
   try {
